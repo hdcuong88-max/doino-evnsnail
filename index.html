@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ĐÒI NỢ EVN">
+    <meta name="theme-color" content="#DC2626">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <title>ĐÒI NỢ EVNSNAIL - Điện lực Kỳ Anh</title>
+    <style>
+        :root {
+            --primary: #DC2626;
+            --primary-light: rgba(220, 38, 38, 0.1);
+            --blue: #007AFF;
+            --green: #34C759;
+            --green-light: rgba(52, 199, 89, 0.1);
+            --red: #DC2626;
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --text: #000000;
+            --text-secondary: #3C3C43;
+            --text-tertiary: #8E8E93;
+            --separator: #C6C6C8;
+            --separator-light: #E5E5EA;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; min-height: 100vh; min-height: 100dvh; }
+        .app { max-width: 100%; min-height: 100vh; min-height: 100dvh; position: relative; }
+
+        .header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator-light); padding-top: var(--safe-top); }
+        .header-content { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { font-size: 28px; }
+        .header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; color: var(--primary); }
+        .header-subtitle { font-size: 11px; color: var(--text-tertiary); }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-version { text-align: right; margin-right: 8px; }
+        .header-version .v { font-size: 12px; color: var(--primary); font-weight: 600; }
+        .header-version .count { font-size: 10px; color: var(--text-tertiary); }
+        .header-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; background: none; font-size: 20px; color: var(--primary); cursor: pointer; }
+        .header-btn:active { background: var(--primary-light); }
+
+        /* Stats Dashboard */
+        .stats-dashboard { padding: 12px 16px; background: white; border-bottom: 0.5px solid var(--separator-light); }
+        .stats-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .stat-box { flex: 1; text-align: center; padding: 8px 4px; }
+        .stat-box .stat-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .stat-box .stat-value { font-size: 16px; font-weight: 700; }
+        .stat-box.total .stat-value { color: var(--primary); }
+        .stat-box.collected .stat-value { color: var(--green); }
+        .stat-box.remaining .stat-value { color: var(--red); }
+
+        .progress-bar { height: 8px; background: #E5E5EA; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), #2DD4A8); border-radius: 4px; transition: width 0.5s ease; }
+        .progress-text { font-size: 11px; color: var(--text-tertiary); text-align: center; margin-top: 4px; }
+
+        /* Filter Tabs */
+        .filter-tabs { display: flex; padding: 8px 16px; gap: 8px; background: white; border-bottom: 0.5px solid var(--separator-light); }
+        .filter-tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+        .filter-tab.all { background: #EFEFF4; color: var(--text-secondary); }
+        .filter-tab.all.active { background: var(--primary); color: white; }
+        .filter-tab.debt { background: #EFEFF4; color: var(--text-secondary); }
+        .filter-tab.debt.active { background: var(--red); color: white; }
+        .filter-tab.paid { background: #EFEFF4; color: var(--text-secondary); }
+        .filter-tab.paid.active { background: var(--green); color: white; }
+        .filter-tab.notified { background: #EFEFF4; color: var(--text-secondary); }
+        .filter-tab.notified.active { background: #FF9500; color: white; }
+        .filter-tab .tab-count { font-size: 10px; opacity: 0.8; display: block; margin-top: 2px; }
+
+        .status-badge.notified { background: #FF9500; color: white; }
+        .customer-item.notified { background: rgba(255, 149, 0, 0.08); }
+        .notification-dot { width: 8px; height: 8px; background: #FF9500; border-radius: 50%; display: inline-block; margin-left: 6px; }
+
+        /* Search */
+        .search-section { padding: 8px 16px 12px; background: white; }
+        .search-bar { display: flex; align-items: center; background: #EFEFF4; border-radius: 10px; padding: 8px 12px; gap: 8px; }
+        .search-bar .search-icon { color: var(--text-tertiary); font-size: 16px; flex-shrink: 0; }
+        .search-bar input { border: none; background: none; flex: 1; font-size: 16px; outline: none; color: var(--text); min-width: 0; }
+        .search-bar input::placeholder { color: var(--text-tertiary); }
+        .search-bar .clear-btn { color: #C7C7CC; font-size: 18px; cursor: pointer; border: none; background: none; padding: 2px; display: none; }
+        .search-bar .clear-btn.visible { display: block; }
+
+        .results-count { padding: 6px 16px 0; font-size: 13px; color: var(--text-tertiary); }
+
+        /* Bulk Actions */
+        .bulk-actions { display: none; padding: 12px 16px; background: #FFF9E6; border-bottom: 0.5px solid var(--separator-light); align-items: center; gap: 12px; }
+        .bulk-actions.visible { display: flex; }
+        .bulk-actions .selected-count { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
+        .bulk-btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .bulk-btn.mark-paid { background: var(--green); color: white; }
+        .bulk-btn.mark-debt { background: var(--red); color: white; }
+        .bulk-btn.clear-sel { background: #E5E5EA; color: var(--text-secondary); }
+        .bulk-btn:active { opacity: 0.7; }
+
+        /* Customer List */
+        .customer-list { padding: 4px 0; }
+        .customer-item { padding: 12px 16px; background: var(--card); border-bottom: 0.5px solid var(--separator-light); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 10px; }
+        .customer-item:active { background: #F2F2F7; }
+        .customer-item.collected { background: var(--green-light); }
+        .customer-item.collected .customer-name { text-decoration: line-through; opacity: 0.7; }
+
+        .customer-checkbox { width: 22px; height: 22px; border: 2px solid var(--separator); border-radius: 50%; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .customer-checkbox.checked { background: var(--green); border-color: var(--green); }
+        .customer-checkbox.checked::after { content: "✓"; color: white; font-size: 14px; font-weight: 700; }
+        .customer-item.selected .customer-checkbox { border-color: var(--blue); background: var(--blue); }
+        .customer-item.selected .customer-checkbox::after { content: "✓"; color: white; font-size: 14px; font-weight: 700; }
+
+        .customer-info { flex: 1; min-width: 0; }
+        .customer-row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .customer-name { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; }
+        .customer-code { font-size: 11px; color: var(--blue); white-space: nowrap; flex-shrink: 0; }
+        .customer-row2 { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+        .customer-row2 .icon { color: var(--green); font-size: 12px; }
+        .customer-phone { font-size: 13px; color: var(--text-secondary); }
+        .customer-debt { margin-top: 6px; padding: 5px 10px; background: var(--primary-light); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+        .customer-debt .debt-label { font-size: 11px; color: var(--primary); }
+        .customer-debt .debt-amount { font-size: 14px; color: var(--primary); font-weight: 700; }
+        .customer-debt.paid { background: var(--green-light); }
+        .customer-debt.paid .debt-label { color: var(--green); }
+        .customer-debt.paid .debt-amount { color: var(--green); }
+
+        .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 6px; }
+        .status-badge.paid { background: var(--green); color: white; }
+        .status-badge.debt { background: var(--red); color: white; }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; }
+        .empty-state .empty-icon { font-size: 50px; margin-bottom: 16px; }
+        .empty-state .empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .empty-state .empty-desc { font-size: 14px; color: var(--text-tertiary); line-height: 1.5; }
+        .not-found { text-align: center; padding: 40px 20px; color: var(--text-tertiary); }
+
+        /* Detail Page */
+        .detail-page { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 200; overflow-y: auto; -webkit-overflow-scrolling: touch; transform: translateX(100%); transition: transform 0.3s ease; }
+        .detail-page.active { transform: translateX(0); }
+        .detail-nav { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator-light); display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; padding-top: calc(var(--safe-top) + 8px); }
+        .detail-nav .back-btn { font-size: 16px; color: var(--primary); cursor: pointer; border: none; background: none; }
+        .detail-nav .nav-title { font-size: 17px; font-weight: 600; }
+        .detail-nav .close-btn { font-size: 16px; color: var(--primary); cursor: pointer; border: none; background: none; }
+        .detail-content { padding: 16px; padding-bottom: calc(20px + var(--safe-bottom)); }
+        .detail-header-card { text-align: center; padding: 24px 16px; background: var(--primary-light); border-radius: 16px; margin-bottom: 16px; border: 2px solid var(--primary); }
+        .detail-header-card .d-name { font-size: 20px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+        .detail-header-card .d-phone { font-size: 15px; color: var(--blue); }
+        .detail-header-card .d-debt { font-size: 24px; font-weight: 700; color: var(--primary); margin-top: 10px; }
+        .detail-section { background: var(--card); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+        .detail-section-title { font-size: 13px; font-weight: 600; color: var(--primary); padding: 12px 16px 8px; }
+        .detail-row { display: flex; align-items: flex-start; padding: 10px 16px; gap: 12px; }
+        .detail-row .d-icon { color: var(--primary); width: 22px; text-align: center; font-size: 15px; flex-shrink: 0; }
+        .detail-row .d-info { flex: 1; min-width: 0; }
+        .detail-row .d-label { font-size: 12px; color: var(--text-tertiary); }
+        .detail-row .d-value { font-size: 15px; color: var(--text); word-break: break-word; }
+        .detail-divider { height: 0.5px; background: var(--separator-light); margin-left: 50px; }
+
+        .action-buttons { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        .action-btn { flex: 1; min-width: 80px; text-align: center; padding: 14px 8px; border-radius: 12px; cursor: pointer; border: none; font-family: inherit; }
+        .action-btn.call { background: rgba(52,199,89,0.12); color: var(--green); }
+        .action-btn.copy { background: rgba(0,122,255,0.12); color: var(--blue); }
+        .action-btn.collect { background: rgba(52,199,89,0.12); color: var(--green); }
+        .action-btn.uncollect { background: rgba(220,38,38,0.12); color: var(--red); }
+        .action-btn:active { opacity: 0.7; }
+        .action-btn .ab-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+        .action-btn .ab-label { font-size: 12px; font-weight: 500; }
+
+        /* Import Page */
+        .import-page { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 200; overflow-y: auto; -webkit-overflow-scrolling: touch; transform: translateX(100%); transition: transform 0.3s ease; }
+        .import-page.active { transform: translateX(0); }
+        .import-content { padding: 16px; padding-bottom: calc(20px + var(--safe-bottom)); }
+        .import-section { background: var(--card); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+        .import-section-title { font-size: 13px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; padding: 12px 16px 6px; letter-spacing: 0.5px; }
+        .import-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; }
+        .import-row .ir-label { flex: 1; font-size: 16px; }
+        .import-row .ir-value { font-size: 16px; color: var(--primary); font-weight: 600; }
+        .import-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: none; background: none; cursor: pointer; font-family: inherit; }
+        .import-btn:active { background: #F2F2F7; }
+        .import-note { padding: 12px 16px; font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
+        .import-note li { margin-bottom: 4px; list-style: none; padding-left: 16px; position: relative; }
+        .import-note li::before { content: "•"; position: absolute; left: 0; }
+        .delete-btn { color: var(--red); text-align: center; width: 100%; padding: 14px; border: none; background: var(--card); border-radius: 12px; font-size: 16px; cursor: pointer; font-family: inherit; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 25px; font-size: 14px; z-index: 1000; transition: transform 0.3s ease; white-space: nowrap; }
+        .toast.visible { transform: translateX(-50%) translateY(0); }
+        .install-banner { background: linear-gradient(135deg, #DC2626, #B91C1C); color: white; padding: 14px 16px; display: none; align-items: center; gap: 12px; cursor: pointer; }
+        .install-banner.visible { display: flex; }
+        .install-banner .ib-text { flex: 1; }
+        .install-banner .ib-title { font-size: 14px; font-weight: 600; }
+        .install-banner .ib-desc { font-size: 12px; opacity: 0.9; }
+        .install-banner .ib-btn { background: white; color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 500; }
+        .loading-overlay.visible { display: flex; }
+        .loading-card { background: white; border-radius: 16px; padding: 30px 40px; text-align: center; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #E5E5EA; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 15px; color: var(--text-secondary); }
+
+        @media (min-width: 500px) {
+            .app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+            .detail-page, .import-page { max-width: 430px; left: 50%; transform: translateX(calc(-50% + 430px)); }
+            .detail-page.active, .import-page.active { transform: translateX(-50%); }
+        }
+        #csvFileInput { display: none; }
+    </style>
+</head>
+<body>
+<div class="app" id="app">
+    <div class="install-banner" id="installBanner">
+        <div class="ib-text">
+            <div class="ib-title">Cài đặt ĐÒI NỢ EVNSNAIL</div>
+            <div class="ib-desc">Thêm vào màn hình chính để dùng như app</div>
+        </div>
+        <div class="ib-btn" onclick="installApp()">Cài đặt</div>
+    </div>
+
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <span class="header-logo">⚠️</span>
+                <div>
+                    <div class="header-title">ĐÒI NỢ EVNSNAIL</div>
+                    <div class="header-subtitle">Điện lực Kỳ Anh</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-version" id="versionInfo" style="display:none">
+                    <div class="v" id="versionText"></div>
+                    <div class="count" id="customerCount"></div>
+                </div>
+                <button class="header-btn" onclick="showImport()" title="Cập nhật">📥</button>
+                <button class="header-btn" onclick="showSettings()" title="Cài đặt">⚙️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="stats-dashboard" id="statsDashboard" style="display:none">
+        <div class="stats-row">
+            <div class="stat-box total">
+                <div class="stat-label">Tổng nợ</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-box collected">
+                <div class="stat-label">Đã thu</div>
+                <div class="stat-value" id="statCollected">0</div>
+            </div>
+            <div class="stat-box remaining">
+                <div class="stat-label">Còn nợ</div>
+                <div class="stat-value" id="statRemaining">0</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-text" id="progressText">0% đã thu</div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs" id="filterTabs" style="display:none">
+        <button class="filter-tab all active" data-filter="all">Tất cả<span class="tab-count" id="countAll">0</span></button>
+        <button class="filter-tab debt" data-filter="debt">Còn nợ<span class="tab-count" id="countDebt">0</span></button>
+        <button class="filter-tab paid" data-filter="paid">Đã thu<span class="tab-count" id="countPaid">0</span></button>
+        <button class="filter-tab notified" data-filter="notified">Đã TB<span class="tab-count" id="countNotified">0</span></button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-section" id="searchSection" style="display:none">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH..." autocomplete="off">
+            <button class="clear-btn" id="clearBtn" onclick="clearSearch()">⊗</button>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" id="bulkActions">
+        <div class="selected-count" id="selectedCount">0 đã chọn</div>
+        <button class="bulk-btn mark-paid" onclick="bulkMarkPaid()">✅ Đã thu</button>
+        <button class="bulk-btn mark-debt" onclick="bulkMarkDebt()"> Còn nợ</button>
+        <button class="bulk-btn clear-sel" onclick="clearSelection()">Bỏ chọn</button>
+    </div>
+
+    <div class="results-count" id="resultsCount" style="display:none"></div>
+
+    <div id="content">
+        <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <div class="empty-title">ĐÒI NỢ EVNSNAIL</div>
+            <div class="empty-desc">Chưa có dữ liệu.<br>Nhấn 📥 để import file CSV.</div>
+        </div>
+    </div>
+
+    <div class="detail-page" id="detailPage">
+        <div class="detail-nav">
+            <button class="back-btn" onclick="closeDetail()">‹ Quay lại</button>
+            <span class="nav-title">Chi tiết nợ</span>
+            <button class="close-btn" onclick="closeDetail()">Đóng</button>
+        </div>
+        <div class="detail-content" id="detailContent"></div>
+    </div>
+
+    <div class="import-page" id="importPage">
+        <div class="detail-nav">
+            <span></span>
+            <span class="nav-title">Cập nhật dữ liệu</span>
+            <button class="close-btn" onclick="closeImport()">Xong</button>
+        </div>
+        <div class="import-content">
+            <div class="import-section">
+                <div class="import-section-title">Phiên bản</div>
+                <div class="import-row">
+                    <span class="ir-label">Tự động (năm.tháng)</span>
+                    <label style="position:relative;width:51px;height:31px;flex-shrink:0">
+                        <input type="checkbox" id="autoVersion" checked onchange="toggleVersionInput()" style="opacity:0;width:0;height:0">
+                        <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#E9E9EA;border-radius:31px;transition:0.3s"></span>
+                    </label>
+                </div>
+                <div class="import-row" id="versionRow" style="display:none">
+                    <span class="ir-label">Số phiên bản</span>
+                    <input type="text" id="versionInput" placeholder="vd: 2026.10" style="border:none;font-size:16px;outline:none;text-align:right;flex:1">
+                </div>
+            </div>
+            <div class="import-section">
+                <div class="import-section-title">Import dữ liệu</div>
+                <button class="import-btn" onclick="pickCSVFile()">
+                    <span style="font-size:22px;color:var(--primary)">📄</span>
+                    <span style="flex:1;font-size:16px">Chọn file CSV</span>
+                    <span style="color:var(--separator)">›</span>
+                </button>
+            </div>
+            <div class="import-section">
+                <div class="import-section-title">Thông tin</div>
+                <ul class="import-note">
+                    <li>Chọn file CSV danh sách nợ từ CMIS</li>
+                    <li>Tích vào KH để đánh dấu Đã thu/Còn nợ</li>
+                    <li>Chọn nhiều KH cùng lúc để xử lý nhanh</li>
+                    <li>Trạng thái được lưu tự động trên máy</li>
+                </ul>
+            </div>
+            <div id="currentDataSection" style="display:none">
+                <div class="import-section">
+                    <div class="import-section-title">Dữ liệu hiện tại</div>
+                    <div class="import-row"><span class="ir-label">Phiên bản</span><span class="ir-value" id="currentVersion"></span></div>
+                    <div style="height:0.5px;background:var(--separator-light);margin-left:50px"></div>
+                    <div class="import-row"><span class="ir-label">Số KH nợ</span><span class="ir-value" id="currentCount"></span></div>
+                    <div style="height:0.5px;background:var(--separator-light);margin-left:50px"></div>
+                    <div class="import-row"><span class="ir-label">Cập nhật</span><span class="ir-value" id="currentDate" style="font-size:14px"></span></div>
+                </div>
+                <button class="delete-btn" onclick="clearData()">Xóa toàn bộ dữ liệu</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Đang xử lý...</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <input type="file" id="csvFileInput" accept=".csv,text/csv">
+</div>
+
+<script>
+let customers = [];
+let currentVersion = null;
+let collectedSet = new Set();
+let notifiedSet = new Set();
+let selectedSet = new Set();
+let currentFilter = 'all';
+let deferredPrompt = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupSearch();
+    setupFilterTabs();
+    setupFileInput();
+    setupInstallPrompt();
+    registerServiceWorker();
+    updateUI();
+    initApp();
+});
+
+async function initApp() {
+    await loadData();
+    if (customers.length === 0) {
+        showLoading('Đang tải dữ liệu...');
+        try {
+            await loadEmbeddedData();
+            hideLoading();
+            showToast('Đã tải dữ liệu!');
+        } catch (e) { hideLoading(); console.error(e); }
+    }
+    loadCollected();
+    loadNotified();
+    updateUI();
+    updateStats();
+}
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('DoinoEVNSNAIL', 2);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('data')) db.createObjectStore('data');
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function saveData() {
+    const db = await openDB();
+    const tx = db.transaction('data', 'readwrite');
+    tx.objectStore('data').put({ version: currentVersion, customers }, 'appData');
+    return new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = (e) => reject(e.target.error); });
+}
+
+async function loadData() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction('data', 'readonly');
+        const request = tx.objectStore('data').get('appData');
+        return new Promise((resolve) => {
+            request.onsuccess = () => { if (request.result) { currentVersion = request.result.version; customers = request.result.customers || []; } resolve(); };
+            request.onerror = () => resolve();
+        });
+    } catch (e) { console.error(e); }
+}
+
+async function loadEmbeddedData() {
+    // Thử fetch data.json trước (đơn giản hơn, không cần giải nén)
+    try {
+        const response = await fetch('data.json');
+        if (!response.ok) throw new Error('Không tải được data.json');
+        const data = await response.json();
+        await saveEmbeddedData(data);
+        return;
+    } catch (e) {
+        console.log('Fetch data.json failed:', e);
+    }
+    
+    // Fallback: thử data.json.gz
+    try {
+        const response = await fetch('data.json.gz');
+        if (!response.ok) throw new Error('Không tải được data.json.gz');
+        const blob = await response.blob();
+        
+        // Thử giải nén bằng DecompressionStream
+        if (typeof DecompressionStream !== 'undefined') {
+            const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+            const text = await new Response(stream).text();
+            await saveEmbeddedData(JSON.parse(text));
+        } else {
+            // Fallback cho trình duyệt cũ - đọc trực tiếp (có thể lỗi)
+            const text = await blob.text();
+            await saveEmbeddedData(JSON.parse(text));
+        }
+    } catch (e) {
+        console.error('Load embedded data failed:', e);
+        throw e;
+    }
+}
+
+async function saveEmbeddedData(data) {
+    // Map field names từ JSON ngắn gọn sang tên đầy đủ
+    customers = data.c.map(c => ({
+        maKhachHang: c.m,
+        tenKhachHang: c.t,
+        soDienThoai: c.s,
+        diaChi: c.d,
+        kyNo: c.k,
+        tongTien: c.n,
+        thuNganVien: c.tnv,
+        soCongTo: c.ct,
+        soCot: c.sc,
+        tenTram: c.tb,
+        maTram: c.mt || '',
+        idHoaDon: c.id || '',
+        loaiHoaDon: c.lh || '',
+        ngayPhatHanh: c.np || '',
+        tienNo: c.tn || '',
+        thueNo: c.th || ''
+    }));
+    currentVersion = { version: data.v, ngayCapNhat: new Date().toISOString(), soLuongKhachHang: data.n, moTa: 'Dữ liệu nợ v' + data.v };
+    await saveData();
+    updateUI();
+}
+
+function loadCollected() {
+    try { const s = localStorage.getItem('doino_collected'); if (s) collectedSet = new Set(JSON.parse(s)); } catch(e) {}
+}
+function saveCollected() { localStorage.setItem('doino_collected', JSON.stringify([...collectedSet])); }
+
+function loadNotified() {
+    try { const s = localStorage.getItem('doino_notified'); if (s) notifiedSet = new Set(JSON.parse(s)); } catch(e) {}
+}
+function saveNotified() { localStorage.setItem('doino_notified', JSON.stringify([...notifiedSet])); }
+
+function toggleNotified(maKH) {
+    if (notifiedSet.has(maKH)) { notifiedSet.delete(maKH); showToast('Đã bỏ đánh dấu Đã thông báo'); }
+    else { notifiedSet.add(maKH); showToast('Đã đánh dấu Đã thông báo 📞'); }
+    saveNotified();
+    updateStats();
+    performSearch();
+}
+
+function toggleCollected(maKH) {
+    if (collectedSet.has(maKH)) { collectedSet.delete(maKH); showToast('Đã chuyển thành Còn nợ'); }
+    else { collectedSet.add(maKH); showToast('Đã đánh dấu Đã thu ✅'); }
+    saveCollected();
+    updateStats();
+    performSearch();
+}
+
+function updateStats() {
+    const total = customers.length;
+    const collected = customers.filter(c => collectedSet.has(c.maKhachHang)).length;
+    const remaining = total - collected;
+    const notified = customers.filter(c => notifiedSet.has(c.maKhachHang)).length;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statCollected').textContent = collected;
+    document.getElementById('statRemaining').textContent = remaining;
+    document.getElementById('countAll').textContent = total;
+    document.getElementById('countDebt').textContent = remaining;
+    document.getElementById('countPaid').textContent = collected;
+    document.getElementById('countNotified').textContent = notified;
+
+    const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `${pct}% đã thu (${collected}/${total} KH) | ${notified} đã thông báo`;
+}
+
+function setupSearch() {
+    const input = document.getElementById('searchInput');
+    let timeout;
+    input.addEventListener('input', () => {
+        clearTimeout(timeout);
+        document.getElementById('clearBtn').classList.toggle('visible', input.value.length > 0);
+        timeout = setTimeout(() => performSearch(), 150);
+    });
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('clearBtn').classList.remove('visible');
+    performSearch();
+}
+
+function setupFilterTabs() {
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter;
+            performSearch();
+        });
+    });
+}
+
+function performSearch() {
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    const content = document.getElementById('content');
+    const countEl = document.getElementById('resultsCount');
+
+    let filtered = customers;
+    if (currentFilter === 'debt') filtered = customers.filter(c => !collectedSet.has(c.maKhachHang));
+    else if (currentFilter === 'paid') filtered = customers.filter(c => collectedSet.has(c.maKhachHang));
+    else if (currentFilter === 'notified') filtered = customers.filter(c => notifiedSet.has(c.maKhachHang));
+
+    if (query) {
+        filtered = filtered.filter(c =>
+            c.maKhachHang.toLowerCase().includes(query) ||
+            c.tenKhachHang.toLowerCase().includes(query) ||
+            c.soDienThoai.includes(query) ||
+            c.tenTram.toLowerCase().includes(query)
+        );
+    }
+
+    countEl.textContent = query ? `Tìm thấy ${filtered.length} kết quả` : '';
+    countEl.style.display = query ? 'block' : 'none';
+
+    if (filtered.length === 0) {
+        content.innerHTML = `<div class="not-found"><div style="font-size:40px;margin-bottom:10px"></div><div>Không tìm thấy kết quả</div></div>`;
+        return;
+    }
+
+    renderCustomerList(filtered.slice(0, 200));
+}
+
+function renderCustomerList(list) {
+    const content = document.getElementById('content');
+    let html = '<div class="customer-list">';
+    for (const c of list) {
+        const isCollected = collectedSet.has(c.maKhachHang);
+        const isNotified = notifiedSet.has(c.maKhachHang);
+        const isSelected = selectedSet.has(c.maKhachHang);
+        html += `
+            <div class="customer-item ${isCollected ? 'collected' : ''} ${isNotified ? 'notified' : ''} ${isSelected ? 'selected' : ''}" data-ma="${c.maKhachHang}">
+                <div class="customer-checkbox ${isCollected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleCollected('${c.maKhachHang}')"></div>
+                <div class="customer-info" onclick="showDetail('${c.maKhachHang}')">
+                    <div class="customer-row1">
+                        <span class="customer-name">${escapeHtml(c.tenKhachHang)}${isNotified ? '<span class="notification-dot"></span>' : ''}</span>
+                        <span class="customer-code">${c.maKhachHang.substring(0, 10)}</span>
+                    </div>
+                    <div class="customer-row2">
+                        <span class="icon"></span>
+                        <span class="customer-phone">${c.soDienThoai}</span>
+                        <span class="status-badge ${isCollected ? 'paid' : 'debt'}">${isCollected ? 'ĐÃ THU' : 'CÒN NỢ'}</span>
+                    </div>
+                    <div class="customer-debt ${isCollected ? 'paid' : ''}">
+                        <span class="debt-label">Số tiền:</span>
+                        <span class="debt-amount">${formatMoney(c.tongTien)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+function formatMoney(amount) {
+    if (!amount) return '0 đ';
+    const num = parseFloat(amount.toString().replace(/,/g, ''));
+    return num.toLocaleString('vi-VN') + ' đ';
+}
+
+function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+function showDetail(maKH) {
+    const c = customers.find(x => x.maKhachHang === maKH);
+    if (!c) return;
+    const page = document.getElementById('detailPage');
+    const content = document.getElementById('detailContent');
+    const isCollected = collectedSet.has(c.maKhachHang);
+    const isNotified = notifiedSet.has(c.maKhachHang);
+
+    content.innerHTML = `
+        <div class="detail-header-card">
+            <div class="d-name">${escapeHtml(c.tenKhachHang)}</div>
+            <div class="d-phone">${c.soDienThoai}</div>
+            <div class="d-debt">${formatMoney(c.tongTien)}</div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title"> Thông tin khách hàng</div>
+            <div class="detail-row"><span class="d-icon"></span><div class="d-info"><div class="d-label">Mã khách hàng</div><div class="d-value">${c.maKhachHang}</div></div></div>
+            <div class="detail-divider"></div>
+            <div class="detail-row"><span class="d-icon">📞</span><div class="d-info"><div class="d-label">Số điện thoại</div><div class="d-value"><a href="tel:${c.soDienThoai}" style="color:var(--blue);text-decoration:none">${c.soDienThoai}</a></div></div></div>
+            <div class="detail-divider"></div>
+            <div class="detail-row"><span class="d-icon">📍</span><div class="d-info"><div class="d-label">Địa chỉ</div><div class="d-value">${escapeHtml(c.diaChi)}</div></div></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">⚡ Thông tin nợ</div>
+            ${c.idHoaDon ? `<div class="detail-row"><span class="d-icon">🔢</span><div class="d-info"><div class="d-label">ID hóa đơn</div><div class="d-value">${c.idHoaDon}</div></div></div><div class="detail-divider"></div>` : ''}
+            <div class="detail-row"><span class="d-icon">💰</span><div class="d-info"><div class="d-label">Tổng tiền nợ</div><div class="d-value" style="color:var(--primary);font-weight:700">${formatMoney(c.tongTien)}</div></div></div>
+            ${c.tienNo ? `<div class="detail-divider"></div><div class="detail-row"><span class="d-icon">💵</span><div class="d-info"><div class="d-label">Tiền nợ</div><div class="d-value">${formatMoney(c.tienNo)}</div></div></div>` : ''}
+            ${c.thueNo ? `<div class="detail-divider"></div><div class="detail-row"><span class="d-icon">🧾</span><div class="d-info"><div class="d-label">Thuế nợ</div><div class="d-value">${formatMoney(c.thueNo)}</div></div></div>` : ''}
+            <div class="detail-divider"></div>
+            ${c.loaiHoaDon ? `<div class="detail-row"><span class="d-icon">📋</span><div class="d-info"><div class="d-label">Loại hóa đơn</div><div class="d-value">${c.loaiHoaDon}</div></div></div><div class="detail-divider"></div>` : ''}
+            ${c.ngayPhatHanh ? `<div class="detail-row"><span class="d-icon"></span><div class="d-info"><div class="d-label">Ngày phát hành</div><div class="d-value">${c.ngayPhatHanh}</div></div></div><div class="detail-divider"></div>` : ''}
+            <div class="detail-row"><span class="d-icon">📆</span><div class="d-info"><div class="d-label">Kỳ nợ</div><div class="d-value">${c.kyNo}</div></div></div>
+            <div class="detail-divider"></div>
+            <div class="detail-row"><span class="d-icon">📊</span><div class="d-info"><div class="d-label">Số công tơ</div><div class="d-value">${c.soCongTo}</div></div></div>
+            <div class="detail-divider"></div>
+            <div class="detail-row"><span class="d-icon">👤</span><div class="d-info"><div class="d-label">Thu ngân viên</div><div class="d-value">${escapeHtml(c.thuNganVien)}</div></div></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">🏢 Trạm biến áp</div>
+            <div class="detail-row"><span class="d-icon">⚡</span><div class="d-info"><div class="d-label">Tên trạm</div><div class="d-value">${escapeHtml(c.tenTram)}</div></div></div>
+        </div>
+        <div class="action-buttons">
+            <a href="tel:${c.soDienThoai}" class="action-btn call" style="text-decoration:none;text-align:center"><span class="ab-icon">📞</span><span class="ab-label">Gọi điện</span></a>
+            <button class="action-btn copy" onclick='copyInfo(${JSON.stringify(c).replace(/'/g, "\\'")})'><span class="ab-icon">📋</span><span class="ab-label">Sao chép</span></button>
+            <button class="action-btn ${isNotified ? 'uncollect' : 'collect'}" onclick="toggleNotified('${c.maKhachHang}'); closeDetail();" style="background:${isNotified ? 'rgba(255,149,0,0.15)' : 'rgba(255,149,0,0.15)'};color:#FF9500"><span class="ab-icon">${isNotified ? '✅' : '📢'}</span><span class="ab-label">${isNotified ? 'Bỏ thông báo' : 'Đã thông báo'}</span></button>
+            <button class="action-btn ${isCollected ? 'uncollect' : 'collect'}" onclick="toggleCollected('${c.maKhachHang}'); closeDetail();"><span class="ab-icon">${isCollected ? '' : '✅'}</span><span class="ab-label">${isCollected ? 'Còn nợ' : 'Đã thu'}</span></button>
+        </div>`;
+    page.classList.add('active');
+}
+
+function closeDetail() { document.getElementById('detailPage').classList.remove('active'); }
+
+function copyInfo(c) {
+    let info = `ĐÒI NỢ EVNSNAIL\nKhách hàng: ${c.tenKhachHang}\nMã KH: ${c.maKhachHang}\nSĐT: ${c.soDienThoai}\nĐịa chỉ: ${c.diaChi}\nSố tiền nợ: ${formatMoney(c.tongTien)}\nKỳ nợ: ${c.kyNo}\nTBA: ${c.tenTram}`;
+    if (navigator.clipboard) navigator.clipboard.writeText(info).then(() => showToast('Đã sao chép!'));
+    else { const ta = document.createElement('textarea'); ta.value = info; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Đã sao chép!'); }
+}
+
+function showImport() { updateImportPage(); document.getElementById('importPage').classList.add('active'); }
+function closeImport() { document.getElementById('importPage').classList.remove('active'); }
+
+function updateImportPage() {
+    const autoVersion = document.getElementById('autoVersion').checked;
+    if (autoVersion) { const now = new Date(); document.getElementById('versionRow').style.display = 'none'; }
+    else { document.getElementById('versionRow').style.display = 'flex'; }
+    if (currentVersion) {
+        document.getElementById('currentDataSection').style.display = 'block';
+        document.getElementById('currentVersion').textContent = `v${currentVersion.version}`;
+        document.getElementById('currentCount').textContent = currentVersion.soLuongKhachHang.toLocaleString();
+        document.getElementById('currentDate').textContent = new Date(currentVersion.ngayCapNhat).toLocaleDateString('vi-VN');
+    } else { document.getElementById('currentDataSection').style.display = 'none'; }
+}
+
+function toggleVersionInput() { updateImportPage(); }
+
+function setupFileInput() { document.getElementById('csvFileInput').addEventListener('change', handleFileSelect); }
+function pickCSVFile() { document.getElementById('csvFileInput').click(); }
+
+async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    showLoading('Đang đọc file...');
+    try {
+        const text = await readFileAsText(file);
+        updateLoadingText('Đang phân tích...');
+        const parsed = parseCSV(text);
+        if (parsed.length === 0) { hideLoading(); showToast('File không có dữ liệu!'); return; }
+        updateLoadingText(`Đang lưu ${parsed.length} KH nợ...`);
+        const autoVersion = document.getElementById('autoVersion').checked;
+        let versionStr = autoVersion ? `${new Date().getFullYear()}.${String(new Date().getMonth()+1).padStart(2,'0')}` : document.getElementById('versionInput').value.trim();
+        if (!versionStr) { hideLoading(); showToast('Nhập số phiên bản!'); return; }
+        customers = parsed;
+        currentVersion = { version: versionStr, ngayCapNhat: new Date().toISOString(), soLuongKhachHang: parsed.length, moTa: 'Cập nhật nợ v' + versionStr };
+        collectedSet = new Set();
+        notifiedSet = new Set();
+        saveCollected();
+        saveNotified();
+        await saveData();
+        updateUI();
+        updateImportPage();
+        updateStats();
+        hideLoading();
+        showToast(`✅ Đã import ${parsed.length} KH nợ!`);
+    } catch (err) { hideLoading(); showToast('Lỗi: ' + err.message); }
+}
+
+function readFileAsText(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(new Error('Không đọc được file')); r.readAsText(file, 'UTF-8'); }); }
+
+function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 7) return [];
+    let headerIndex = -1;
+    for (let i = 0; i < Math.min(10, lines.length); i++) { if (lines[i].includes('STT') && lines[i].includes('Mã khách hàng')) { headerIndex = i; break; } }
+    if (headerIndex < 0) return [];
+    const results = [];
+    for (let i = headerIndex + 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        if (cols.length < 12) continue;
+        const maKH = cols[3].trim(); if (!maKH) continue;
+        const totalCols = cols.length >= 17;
+        results.push({
+            maKhachHang: maKH,
+            tenKhachHang: cols[4].trim(),
+            soDienThoai: totalCols ? cols[12].trim() : cols[7].trim(),
+            diaChi: cols[5].trim().replace(/^"|"$/g, ''),
+            kyNo: cols[6].trim(),
+            tongTien: totalCols ? cols[11].trim().replace(/"/g, '').replace(/,/g, '') : cols[6].trim().replace(/"/g, '').replace(/,/g, ''),
+            thuNganVien: totalCols ? cols[13].trim() : cols[8].trim(),
+            soCongTo: totalCols ? cols[14].trim() : cols[9].trim(),
+            soCot: totalCols ? cols[15].trim() : cols[10].trim(),
+            tenTram: totalCols ? cols[16].trim() : cols[11].trim(),
+            maTram: '',
+            idHoaDon: totalCols ? cols[2].trim() : '',
+            loaiHoaDon: totalCols ? cols[7].trim() : '',
+            ngayPhatHanh: totalCols ? cols[8].trim().split(' ')[0] : '',
+            tienNo: totalCols ? cols[9].trim() : '',
+            thueNo: totalCols ? cols[10].trim() : ''
+        });
+    }
+    return results;
+}
+
+function parseCSVLine(line) {
+    const cols = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') inQuotes = !inQuotes;
+        else if (ch === ',' && !inQuotes) { cols.push(current); current = ''; }
+        else current += ch;
+    }
+    cols.push(current); return cols;
+}
+
+async function clearData() {
+    if (!confirm('Xóa toàn bộ dữ liệu?')) return;
+    customers = []; currentVersion = null; collectedSet = new Set(); notifiedSet = new Set();
+    saveCollected(); saveNotified(); await saveData(); updateUI(); updateImportPage();
+    showToast('Đã xóa dữ liệu');
+}
+
+function showSettings() {
+    const page = document.getElementById('importPage');
+    const content = page.querySelector('.import-content');
+    content.innerHTML = `
+        <div style="text-align:center;padding:24px 0"><div style="font-size:50px">⚠️</div><div style="font-size:22px;font-weight:700;margin-top:8px;color:var(--primary)">ĐÒI NỢ EVNSNAIL</div><div style="font-size:14px;color:var(--text-tertiary)">Điện lực Kỳ Anh - v1.2</div></div>
+        <div class="import-section">
+            <div class="import-section-title">Hướng dẫn sử dụng</div>
+            <ul class="import-note">
+                <li><b>Tích xanh ✅:</b> Nhấn vào vòng tròn bên trái KH để đánh dấu Đã thu</li>
+                <li><b>📢 Đã thông báo:</b> Nhấn vào KH → nút "Đã thông báo" để đánh dấu đã gọi điện</li>
+                <li><b>Chấm cam 🟠:</b> Hiển thị bên cạnh tên KH đã được thông báo</li>
+                <li><b>Bộ lọc:</b> Dùng tab Tất cả / Còn nợ / Đã thu / Đã TB để lọc nhanh</li>
+                <li><b>Tìm kiếm:</b> Nhập SĐT, tên, mã KH để tìm nhanh</li>
+                <li><b>Chi tiết:</b> Nhấn vào KH để xem đầy đủ thông tin và đổi trạng thái</li>
+                <li><b>Gọi điện:</b> Nhấn nút Gọi điện để gọi trực tiếp</li>
+                <li><b>Sao chép:</b> Copy thông tin đòi nợ để gửi tin nhắn</li>
+                <li><b>Trạng thái lưu tự động:</b> Không mất khi thoát app</li>
+            </ul>
+        </div>`;
+    page.querySelector('.nav-title').textContent = 'Hướng dẫn';
+    page.classList.add('active');
+}
+
+function updateUI() {
+    const versionInfo = document.getElementById('versionInfo');
+    const statsDashboard = document.getElementById('statsDashboard');
+    const filterTabs = document.getElementById('filterTabs');
+    const searchSection = document.getElementById('searchSection');
+    const content = document.getElementById('content');
+
+    if (customers.length === 0) {
+        content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">ĐÒI NỢ EVNSNAIL</div><div class="empty-desc">Chưa có dữ liệu.<br>Nhấn  để import file CSV.</div></div>`;
+        versionInfo.style.display = 'none';
+        statsDashboard.style.display = 'none';
+        filterTabs.style.display = 'none';
+        searchSection.style.display = 'none';
+    } else {
+        content.innerHTML = '';
+        versionInfo.style.display = 'block';
+        statsDashboard.style.display = 'block';
+        filterTabs.style.display = 'flex';
+        searchSection.style.display = 'block';
+        document.getElementById('versionText').textContent = `v${currentVersion?.version || '1.0'}`;
+        document.getElementById('customerCount').textContent = `${customers.length} KH nợ`;
+        updateStats();
+        performSearch();
+    }
+}
+
+function showLoading(text) { document.getElementById('loadingText').textContent = text; document.getElementById('loadingOverlay').classList.add('visible'); }
+function updateLoadingText(text) { document.getElementById('loadingText').textContent = text; }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('visible'); }
+function showToast(message) { const t = document.getElementById('toast'); t.textContent = message; t.classList.add('visible'); setTimeout(() => t.classList.remove('visible'), 2500); }
+
+function setupInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBanner').classList.add('visible'); });
+    window.addEventListener('appinstalled', () => { deferredPrompt = null; document.getElementById('installBanner').classList.remove('visible'); showToast('Đã cài đặt!'); });
+}
+async function installApp() { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBanner').classList.remove('visible'); } else { showToast('Safari → Chia sẻ → Thêm vào MH chính'); } }
+async function registerServiceWorker() { if ('serviceWorker' in navigator) { try { await navigator.serviceWorker.register('sw.js'); } catch(e) {} } }
+</script>
+</body>
+</html>
