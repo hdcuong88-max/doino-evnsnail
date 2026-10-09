@@ -271,7 +271,7 @@
     <div class="search-section" id="searchSection" style="display:none">
         <div class="search-bar">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH, SGC..." autocomplete="off">
             <button class="clear-btn" id="clearBtn" onclick="clearSearch()">⊗</button>
         </div>
     </div>
@@ -495,6 +495,7 @@ async function saveEmbeddedData(data) {
         soCongTo: c.ct,
         soCot: c.sc,
         tenTram: c.tb,
+        sgc: c.sg || '',
         maTram: c.mt || '',
         idHoaDon: c.id || '',
         loaiHoaDon: c.lh || '',
@@ -590,11 +591,13 @@ function performSearch() {
     else if (currentFilter === 'notified') filtered = customers.filter(c => notifiedSet.has(c.maKhachHang));
 
     if (query) {
+        const sgcQuery = query.replace(/\s+/g, ''); // "ka 046" hoặc "KA046" đều được
         filtered = filtered.filter(c =>
             c.maKhachHang.toLowerCase().includes(query) ||
             c.tenKhachHang.toLowerCase().includes(query) ||
             c.soDienThoai.includes(query) ||
-            c.tenTram.toLowerCase().includes(query)
+            c.tenTram.toLowerCase().includes(query) ||
+            (c.sgc || '').toLowerCase().replace(/\s+/g, '').includes(sgcQuery)
         );
     }
 
@@ -688,6 +691,7 @@ function showDetail(maKH) {
         <div class="detail-section">
             <div class="detail-section-title">🏢 Trạm biến áp</div>
             <div class="detail-row"><span class="d-icon">⚡</span><div class="d-info"><div class="d-label">Tên trạm</div><div class="d-value">${escapeHtml(c.tenTram)}</div></div></div>
+            <div class="detail-row"><span class="d-icon">🗺️</span><div class="d-info"><div class="d-label">Mã sổ GCS (SGC)</div><div class="d-value">${escapeHtml(c.sgc || '')}</div></div></div>
         </div>
         <div class="action-buttons">
             <a href="tel:${c.soDienThoai}" class="action-btn call" style="text-decoration:none;text-align:center"><span class="ab-icon">📞</span><span class="ab-label">Gọi điện</span></a>
