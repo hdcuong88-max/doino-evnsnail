@@ -277,6 +277,10 @@
             <button class="clear-btn" id="clearBtn" onclick="clearSearch()">⊗</button>
         </div>
         <label class="sgc-toggle"><input type="checkbox" id="sgcMode" onchange="toggleSgcMode()"> Tìm theo SGC (mã sổ GCS)</label>
+        <div class="search-bar" id="narrowBar" style="display:none">
+            <span class="search-icon">👤</span>
+            <input type="text" id="narrowInput" placeholder="Lọc khách trong sổ: tên, SĐT, mã KH..." autocomplete="off">
+        </div>
     </div>
 
     <!-- Bulk Actions -->
@@ -564,6 +568,10 @@ function setupSearch() {
         document.getElementById('clearBtn').classList.toggle('visible', input.value.length > 0);
         timeout = setTimeout(() => performSearch(), 150);
     });
+    document.getElementById('narrowInput').addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => performSearch(), 150);
+    });
 }
 
 function toggleSgcMode() {
@@ -609,8 +617,18 @@ function performSearch() {
         const sgcQuery = query.replace(/\s+/g, ''); // "ka 046" hoặc "KA046" đều được
         const sgcOf = c => (c.sgc || '').toLowerCase().replace(/\s+/g, '');
         if (document.getElementById('sgcMode').checked) {
-            // Chế độ SGC: chỉ tìm theo mã sổ GCS
+            // Chế độ SGC: lọc theo mã sổ, sau đó lọc tiếp theo tên/SĐT/mã KH nếu có gõ ở ô "Lọc khách trong sổ"
             filtered = filtered.filter(c => sgcOf(c).includes(sgcQuery));
+            const narrow = document.getElementById('narrowInput').value.trim().toLowerCase();
+            if (narrow) {
+                const narrowDigits = narrow.replace(/\s+/g, '');
+                filtered = filtered.filter(c =>
+                    c.tenKhachHang.toLowerCase().includes(narrow) ||
+                    c.maKhachHang.toLowerCase().includes(narrow) ||
+                    c.soDienThoai.replace(/\s+/g, '').includes(narrowDigits) ||
+                    c.diaChi.toLowerCase().includes(narrow)
+                );
+            }
         } else {
             filtered = filtered.filter(c =>
                 c.maKhachHang.toLowerCase().includes(query) ||
