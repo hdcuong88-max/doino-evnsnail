@@ -86,6 +86,8 @@
         .search-bar input::placeholder { color: var(--text-tertiary); }
         .search-bar .clear-btn { color: #C7C7CC; font-size: 18px; cursor: pointer; border: none; background: none; padding: 2px; display: none; }
         .search-bar .clear-btn.visible { display: block; }
+        .sgc-toggle { display: flex; align-items: center; gap: 8px; padding: 2px 16px 10px; font-size: 14px; color: #3A3A3C; cursor: pointer; user-select: none; }
+        .sgc-toggle input { width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer; }
 
         .results-count { padding: 6px 16px 0; font-size: 13px; color: var(--text-tertiary); }
 
@@ -271,9 +273,10 @@
     <div class="search-section" id="searchSection" style="display:none">
         <div class="search-bar">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH, SGC..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH..." autocomplete="off">
             <button class="clear-btn" id="clearBtn" onclick="clearSearch()">⊗</button>
         </div>
+        <label class="sgc-toggle"><input type="checkbox" id="sgcMode" onchange="toggleSgcMode()"> Tìm theo SGC (mã sổ GCS)</label>
     </div>
 
     <!-- Bulk Actions -->
@@ -563,6 +566,16 @@ function setupSearch() {
     });
 }
 
+function toggleSgcMode() {
+    const on = document.getElementById('sgcMode').checked;
+    const input = document.getElementById('searchInput');
+    input.placeholder = on ? 'Nhập mã sổ GCS, vd KA046' : 'Tìm theo SĐT, tên, mã KH, SGC...';
+    input.value = '';
+    document.getElementById('clearBtn').classList.remove('visible');
+    performSearch();
+    input.focus();
+}
+
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     document.getElementById('clearBtn').classList.remove('visible');
@@ -592,13 +605,19 @@ function performSearch() {
 
     if (query) {
         const sgcQuery = query.replace(/\s+/g, ''); // "ka 046" hoặc "KA046" đều được
-        filtered = filtered.filter(c =>
-            c.maKhachHang.toLowerCase().includes(query) ||
-            c.tenKhachHang.toLowerCase().includes(query) ||
-            c.soDienThoai.includes(query) ||
-            c.tenTram.toLowerCase().includes(query) ||
-            (c.sgc || '').toLowerCase().replace(/\s+/g, '').includes(sgcQuery)
-        );
+        const sgcOf = c => (c.sgc || '').toLowerCase().replace(/\s+/g, '');
+        if (document.getElementById('sgcMode').checked) {
+            // Chế độ SGC: chỉ tìm theo mã sổ GCS
+            filtered = filtered.filter(c => sgcOf(c).includes(sgcQuery));
+        } else {
+            filtered = filtered.filter(c =>
+                c.maKhachHang.toLowerCase().includes(query) ||
+                c.tenKhachHang.toLowerCase().includes(query) ||
+                c.soDienThoai.includes(query) ||
+                c.tenTram.toLowerCase().includes(query) ||
+                sgcOf(c).includes(sgcQuery)
+            );
+        }
     }
 
     countEl.textContent = query ? `Tìm thấy ${filtered.length} kết quả` : '';
