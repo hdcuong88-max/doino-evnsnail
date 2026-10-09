@@ -572,6 +572,8 @@ function toggleSgcMode() {
     input.placeholder = on ? 'Nhập mã sổ GCS, vd KA046' : 'Tìm theo SĐT, tên, mã KH, SGC...';
     input.value = '';
     document.getElementById('clearBtn').classList.remove('visible');
+    document.getElementById('narrowBar').style.display = on ? 'flex' : 'none';
+    document.getElementById('narrowInput').value = '';
     performSearch();
     input.focus();
 }
@@ -893,6 +895,10 @@ function setupInstallPrompt() {
 }
 async function installApp() { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBanner').classList.remove('visible'); } else { showToast('Safari → Chia sẻ → Thêm vào MH chính'); } }
 async function registerServiceWorker() { if ('serviceWorker' in navigator) { try { await navigator.serviceWorker.register('sw.js'); } catch(e) {} } }
+</script>
+</body>
+</html>
+erviceWorker' in navigator) { try { await navigator.serviceWorker.register('sw.js'); } catch(e) {} } }
 </script>
 </body>
 </html>
