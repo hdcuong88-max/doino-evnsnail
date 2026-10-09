@@ -387,13 +387,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initApp() {
     await loadData();
-    if (customers.length === 0) {
-        showLoading('Đang tải dữ liệu...');
-        try {
-            await loadEmbeddedData();
-            hideLoading();
-            showToast('Đã tải dữ liệu!');
-        } catch (e) { hideLoading(); console.error(e); }
+    // Luôn kiểm tra bản mới trên máy chủ khi có mạng (không dùng cache)
+    try {
+        const response = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+        if (response.ok) {
+            const remote = await response.json();
+            const localVersion = currentVersion && currentVersion.version;
+            if (remote && remote.c && remote.v !== localVersion) {
+                showLoading('Đang cập nhật dữ liệu mới...');
+                await saveEmbeddedData(remote); // giữ nguyên Đã thu / Đã TB (lưu riêng trong localStorage)
+                hideLoading();
+                showToast('Đã cập nhật dữ liệu ' + remote.v);
+            }
+        }
+    } catch (e) {
+        console.log('Không kiểm tra được bản mới (có thể đang offline):', e);
+        if (customers.length === 0) {
+            showLoading('Đang tải dữ liệu...');
+            try {
+                await loadEmbeddedData();
+                hideLoading();
+                showToast('Đã tải dữ liệu!');
+            } catch (err) { hideLoading(); console.error(err); }
+        }
     }
     loadCollected();
     loadNotified();
