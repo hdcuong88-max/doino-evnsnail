@@ -278,7 +278,7 @@
         </div>
         <div style="display:flex;flex-wrap:wrap;">
             <label class="sgc-toggle"><input type="checkbox" id="sgcMode" onchange="toggleSgcMode()"> Tìm theo SGC (mã sổ GCS)</label>
-            <label class="sgc-toggle"><input type="checkbox" id="phoneMode" onchange="togglePhoneMode()"> Tìm theo SĐT</label>
+            <label class="sgc-toggle"><input type="checkbox" id="tramMode" onchange="toggleTramMode()"> Tìm theo trạm</label>
         </div>
         <div class="search-bar" id="narrowBar" style="display:none">
             <span class="search-icon">👤</span>
@@ -579,12 +579,12 @@ function setupSearch() {
 
 function refreshSearchMode() {
     const sgc = document.getElementById('sgcMode').checked;
-    const ph = document.getElementById('phoneMode').checked;
+    const tram = document.getElementById('tramMode').checked;
     const input = document.getElementById('searchInput');
     const narrow = document.getElementById('narrowInput');
-    input.placeholder = sgc ? 'Nhập mã sổ GCS, vd KA046' : ph ? 'Nhập số điện thoại...' : 'Tìm theo SĐT, tên, mã KH, SGC...';
-    narrow.placeholder = ph ? 'Nhập số điện thoại trong sổ...' : 'Lọc khách trong sổ: tên, SĐT, mã KH...';
-    document.getElementById('narrowBar').style.display = sgc ? 'flex' : 'none';
+    input.placeholder = sgc ? 'Nhập mã sổ GCS, vd KA046' : tram ? 'Nhập tên trạm, vd Kỳ Lâm 2' : 'Tìm theo SĐT, tên, mã KH, SGC...';
+    narrow.placeholder = tram ? 'Tìm khách trong trạm: tên, SĐT, mã KH...' : 'Lọc khách trong sổ: tên, SĐT, mã KH...';
+    document.getElementById('narrowBar').style.display = (sgc || tram) ? 'flex' : 'none';
     input.value = '';
     narrow.value = '';
     document.getElementById('clearBtn').classList.remove('visible');
@@ -592,8 +592,15 @@ function refreshSearchMode() {
     input.focus();
 }
 
-function toggleSgcMode() { refreshSearchMode(); }
-function togglePhoneMode() { refreshSearchMode(); }
+function toggleSgcMode() {
+    if (document.getElementById('sgcMode').checked) document.getElementById('tramMode').checked = false;
+    refreshSearchMode();
+}
+
+function toggleTramMode() {
+    if (document.getElementById('tramMode').checked) document.getElementById('sgcMode').checked = false;
+    refreshSearchMode();
+}
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
@@ -625,33 +632,26 @@ function performSearch() {
     if (query) {
         const sgcQuery = query.replace(/\s+/g, '');
         const sgcOf = c => (c.sgc || '').toLowerCase().replace(/\s+/g, '');
-        const phoneMode = document.getElementById('phoneMode').checked;
-        const phoneOf = c => c.soDienThoai.replace(/\D/g, '');
         const sgcMode = document.getElementById('sgcMode').checked;
+        const tramMode = document.getElementById('tramMode').checked;
+        const narrow = document.getElementById('narrowInput').value.trim().toLowerCase();
+        const narrowFilter = c => {
+            const nd = narrow.replace(/\s+/g, '');
+            return c.tenKhachHang.toLowerCase().includes(narrow) ||
+                c.maKhachHang.toLowerCase().includes(narrow) ||
+                c.soDienThoai.replace(/\s+/g, '').includes(nd) ||
+                c.diaChi.toLowerCase().includes(narrow);
+        };
 
         if (sgcMode) {
-            // Bước 1: lọc theo mã sổ GCS
+            // Bước 1: lọc theo mã sổ GCS; Bước 2: lọc tiếp trong sổ
             filtered = filtered.filter(c => sgcOf(c).includes(sgcQuery));
-            // Bước 2: lọc tiếp trong sổ (nếu có gõ ở ô "lọc")
-            const narrow = document.getElementById('narrowInput').value.trim().toLowerCase();
-            if (narrow) {
-                if (phoneMode) {
-                    const d = narrow.replace(/\D/g, '');
-                    filtered = d ? filtered.filter(c => phoneOf(c).includes(d)) : [];
-                } else {
-                    const nd = narrow.replace(/\s+/g, '');
-                    filtered = filtered.filter(c =>
-                        c.tenKhachHang.toLowerCase().includes(narrow) ||
-                        c.maKhachHang.toLowerCase().includes(narrow) ||
-                        c.soDienThoai.replace(/\s+/g, '').includes(nd) ||
-                        c.diaChi.toLowerCase().includes(narrow)
-                    );
-                }
-            }
-        } else if (phoneMode) {
-            // Chỉ tìm theo số điện thoại
-            const d = query.replace(/\D/g, '');
-            filtered = d ? filtered.filter(c => phoneOf(c).includes(d)) : [];
+            if (narrow) filtered = filtered.filter(narrowFilter);
+        } else if (tramMode) {
+            // Bước 1: lọc theo tên trạm (bỏ qua khoảng trắng và hoa thường); Bước 2: lọc tiếp theo tên khách
+            const tq = query.replace(/\s+/g, '').toLowerCase();
+            filtered = filtered.filter(c => (c.tenTram || '').replace(/\s+/g, '').toLowerCase().includes(tq));
+            if (narrow) filtered = filtered.filter(narrowFilter);
         } else {
             filtered = filtered.filter(c =>
                 c.maKhachHang.toLowerCase().includes(query) ||
