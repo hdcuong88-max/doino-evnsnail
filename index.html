@@ -88,6 +88,8 @@
         .search-bar .clear-btn.visible { display: block; }
         .sgc-toggle { display: flex; align-items: center; gap: 8px; padding: 2px 16px 10px; font-size: 14px; color: #3A3A3C; cursor: pointer; user-select: none; }
         .sgc-toggle input { width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer; }
+        .tnv-row { display: flex; align-items: center; gap: 8px; padding: 0 0 10px; font-size: 14px; color: #3A3A3C; }
+        .tnv-row select { flex: 1; min-width: 0; padding: 8px; border-radius: 8px; border: 1px solid #C6C6C8; font-size: 14px; background: #fff; }
 
         .results-count { padding: 6px 16px 0; font-size: 13px; color: var(--text-tertiary); }
 
@@ -271,6 +273,7 @@
 
     <!-- Search -->
     <div class="search-section" id="searchSection" style="display:none">
+        <div class="tnv-row"><span>👷 Thu ngân:</span><select id="tnvSelect" onchange="onTnvChange()"><option value="">-- Tất cả --</option></select></div>
         <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input type="text" id="searchInput" placeholder="Tìm theo SĐT, tên, mã KH..." autocomplete="off">
@@ -425,6 +428,7 @@ async function initApp() {
     loadNotified();
     updateUI();
     updateStats();
+    fillTnvSelect();
 }
 
 function openDB() {
@@ -577,6 +581,26 @@ function setupSearch() {
     });
 }
 
+// Danh sách thu ngân viên (lấy từ dữ liệu, bỏ mã số đầu dòng khi hiển thị)
+function fillTnvSelect() {
+    const sel = document.getElementById('tnvSelect');
+    if (!sel) return;
+    const set = [...new Set(customers.map(c => (c.thuNganVien || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'vi'));
+    if (sel.options.length === set.length + 1) return; // không đổi thì không vẽ lại
+    const saved = localStorage.getItem('doino_tnv') || '';
+    sel.innerHTML = '<option value="">-- Tất cả thu ngân --</option>' + set.map(v => {
+        const label = v.replace(/^\d+\s*/, '');
+        return `<option value="${escapeHtml(v)}">${escapeHtml(label)}</option>`;
+    }).join('');
+    sel.value = set.includes(saved) ? saved : '';
+}
+
+function onTnvChange() {
+    localStorage.setItem('doino_tnv', document.getElementById('tnvSelect').value);
+    performSearch();
+}
+
 function refreshSearchMode() {
     const sgc = document.getElementById('sgcMode').checked;
     const tram = document.getElementById('tramMode').checked;
@@ -628,6 +652,10 @@ function performSearch() {
     if (currentFilter === 'debt') filtered = customers.filter(c => !collectedSet.has(c.maKhachHang));
     else if (currentFilter === 'paid') filtered = customers.filter(c => collectedSet.has(c.maKhachHang));
     else if (currentFilter === 'notified') filtered = customers.filter(c => notifiedSet.has(c.maKhachHang));
+
+    fillTnvSelect();
+    const tnvSel = document.getElementById('tnvSelect') ? document.getElementById('tnvSelect').value : '';
+    if (tnvSel) filtered = filtered.filter(c => c.thuNganVien === tnvSel);
 
     if (query) {
         const sgcQuery = query.replace(/\s+/g, '');
