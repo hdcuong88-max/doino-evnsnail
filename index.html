@@ -361,15 +361,6 @@
                 </button>
             </div>
             <div class="import-section">
-                <div class="import-section-title">Gộp file thay đổi (quản lý)</div>
-                <button class="import-btn" onclick="document.getElementById('mergeFileInput').click()">
-                    <span style="font-size:22px;color:var(--primary)">📥</span>
-                    <span style="flex:1;font-size:16px">Chọn nhiều file thay đổi để gộp</span>
-                    <span style="color:var(--separator)">›</span>
-                </button>
-                <input type="file" id="mergeFileInput" accept=".csv,text/csv" multiple style="display:none" onchange="mergeChangeFiles(event)">
-            </div>
-            <div class="import-section">
                 <div class="import-section-title">Thông tin</div>
                 <ul class="import-note">
                     <li>Chọn file CSV danh sách nợ từ CMIS</li>
@@ -991,73 +982,6 @@ function exportChanges() {
 function updateChangeCount() {
     const el = document.getElementById('changeCount');
     if (el) el.textContent = `${getChangedCustomers().length} KH có thay đổi`;
-}
-
-function parseCsvFull(text) {
-    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    const rows = []; let row = []; let cur = ''; let q = false;
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (q) {
-            if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
-            else cur += ch;
-        } else if (ch === '"') q = true;
-        else if (ch === ',') { row.push(cur); cur = ''; }
-        else if (ch === '\r') { /* bỏ qua */ }
-        else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
-        else cur += ch;
-    }
-    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
-    return rows.filter(r => r.some(x => x.trim() !== ''));
-}
-
-async function mergeChangeFiles(e) {
-    const files = [...e.target.files];
-    e.target.value = '';
-    if (!files.length) return;
-    if (!customers.length) { showToast('Chưa có dữ liệu KH để gộp'); return; }
-    const customerIds = new Set(customers.map(c => c.maKhachHang));
-    const stat = { files: 0, rows: 0, notFound: 0, newCollected: 0, newNotified: 0, notesAdded: 0 };
-    showLoading('Đang gộp...');
-    try {
-        for (const f of files) {
-            const rows = parseCsvFull(await readFileAsText(f));
-            if (rows.length < 2) continue;
-            const h = rows[0].map(x => x.trim());
-            const iMa = h.indexOf('MA_KHTT'), iDT = h.indexOf('DA_THU'), iTB = h.indexOf('DA_THONG_BAO');
-            const iGC = h.indexOf('GHI_CHU'), iNV = h.indexOf('NGUOI_CAP_NHAT'), iTG = h.indexOf('THOI_GIAN_XUAT');
-            if (iMa < 0) { showToast('Sai định dạng: ' + f.name); continue; }
-            stat.files++;
-            for (const r of rows.slice(1)) {
-                const ma = (r[iMa] || '').trim();
-                if (!ma) continue;
-                stat.rows++;
-                if (!customerIds.has(ma)) { stat.notFound++; continue; }
-                if ((r[iDT] || '').trim() === '1' && !collectedSet.has(ma)) { collectedSet.add(ma); stat.newCollected++; }
-                if ((r[iTB] || '').trim() === '1' && !notifiedSet.has(ma)) { notifiedSet.add(ma); stat.newNotified++; }
-                const note = (iGC >= 0 ? r[iGC] : '').trim();
-                if (note) {
-                    const existing = notesMap[ma] || '';
-                    if (!existing.includes(note)) {
-                        const who = (iNV >= 0 ? r[iNV] : '').trim() || '?';
-                        const when = (iTG >= 0 ? r[iTG] : '').trim();
-                        const entry = `[${who}${when ? ' · ' + when : ''}] ${note}`;
-                        notesMap[ma] = existing ? existing + '\n' + entry : entry;
-                        stat.notesAdded++;
-                    }
-                }
-            }
-        }
-        saveCollected(); saveNotified(); saveNotes();
-        updateUI(); updateStats(); performSearch(); updateImportPage();
-        hideLoading();
-        alert(`Đã gộp ${stat.files} file (${stat.rows} dòng).\n` +
-              `• Đã thu mới: ${stat.newCollected}\n` +
-              `• Đã thông báo mới: ${stat.newNotified}\n` +
-              `• Ghi chú mới: ${stat.notesAdded}\n` +
-              `• KH không có trong dữ liệu: ${stat.notFound}\n\n` +
-              `Bây giờ bạn có thể "Xuất CSV" để lưu file tổng.`);
-    } catch (err) { hideLoading(); showToast('Lỗi gộp: ' + err.message); }
 }
 
 async function clearData() {
