@@ -384,6 +384,7 @@ let customers = [];
 let currentVersion = null;
 let collectedSet = new Set();
 let notifiedSet = new Set();
+let notesMap = {};
 let selectedSet = new Set();
 let currentFilter = 'all';
 let deferredPrompt = null;
@@ -426,6 +427,7 @@ async function initApp() {
     }
     loadCollected();
     loadNotified();
+    loadNotes();
     updateUI();
     updateStats();
     fillTnvSelect();
@@ -531,6 +533,17 @@ function loadNotified() {
     try { const s = localStorage.getItem('doino_notified'); if (s) notifiedSet = new Set(JSON.parse(s)); } catch(e) {}
 }
 function saveNotified() { localStorage.setItem('doino_notified', JSON.stringify([...notifiedSet])); }
+function loadNotes() {
+    try { const s = localStorage.getItem('doino_notes'); if (s) notesMap = JSON.parse(s) || {}; } catch(e) { notesMap = {}; }
+}
+function saveNotes() { localStorage.setItem('doino_notes', JSON.stringify(notesMap)); }
+function saveNote(maKH, text) {
+    const t = (text || '').trim();
+    if (t) notesMap[maKH] = t; else delete notesMap[maKH];
+    saveNotes();
+    performSearch();
+    showToast(t ? 'Đã lưu ghi chú' : 'Đã xóa ghi chú');
+}
 
 function toggleNotified(maKH) {
     if (notifiedSet.has(maKH)) { notifiedSet.delete(maKH); showToast('Đã bỏ đánh dấu Đã thông báo'); }
@@ -714,7 +727,7 @@ function renderCustomerList(list) {
                 <div class="customer-checkbox ${isCollected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleCollected('${c.maKhachHang}')"></div>
                 <div class="customer-info" onclick="showDetail('${c.maKhachHang}')">
                     <div class="customer-row1">
-                        <span class="customer-name">${escapeHtml(c.tenKhachHang)}${isNotified ? '<span class="notification-dot"></span>' : ''}</span>
+                        <span class="customer-name">${escapeHtml(c.tenKhachHang)}${isNotified ? '<span class="notification-dot"></span>' : ''}${notesMap[c.maKhachHang] ? ' 📝' : ''}</span>
                         <span class="customer-code">${c.maKhachHang.substring(0, 10)}</span>
                     </div>
                     <div class="customer-row2">
@@ -783,6 +796,10 @@ function showDetail(maKH) {
             <div class="detail-row"><span class="d-icon">⚡</span><div class="d-info"><div class="d-label">Tên trạm</div><div class="d-value">${escapeHtml(c.tenTram)}</div></div></div>
             <div class="detail-row"><span class="d-icon">🗺️</span><div class="d-info"><div class="d-label">Mã sổ GCS (SGC)</div><div class="d-value">${escapeHtml(c.sgc || '')}</div></div></div>
         </div>
+        <div class="detail-section">
+            <div class="detail-section-title">📝 Ghi chú</div>
+            <div class="detail-row" style="padding-top:4px"><textarea rows="3" placeholder="VD: KH đổi tên thành ..., đổi SĐT sang ..." style="width:100%;border:1px solid var(--separator-light);border-radius:8px;padding:8px;font-size:15px;font-family:inherit;resize:vertical;box-sizing:border-box" onblur="saveNote('${c.maKhachHang}', this.value)">${escapeHtml(notesMap[c.maKhachHang] || '')}</textarea></div>
+        </div>
         <div class="action-buttons">
             <a href="tel:${c.soDienThoai}" class="action-btn call" style="text-decoration:none;text-align:center"><span class="ab-icon">📞</span><span class="ab-label">Gọi điện</span></a>
             <button class="action-btn copy" onclick='copyInfo(${JSON.stringify(c).replace(/'/g, "\\'")})'><span class="ab-icon">📋</span><span class="ab-label">Sao chép</span></button>
@@ -838,8 +855,10 @@ async function handleFileSelect(e) {
         currentVersion = { version: versionStr, ngayCapNhat: new Date().toISOString(), soLuongKhachHang: parsed.length, moTa: 'Cập nhật nợ v' + versionStr };
         collectedSet = new Set();
         notifiedSet = new Set();
+        notesMap = {};
         saveCollected();
         saveNotified();
+        saveNotes();
         await saveData();
         updateUI();
         updateImportPage();
@@ -899,8 +918,8 @@ function parseCSVLine(line) {
 
 async function clearData() {
     if (!confirm('Xóa toàn bộ dữ liệu?')) return;
-    customers = []; currentVersion = null; collectedSet = new Set(); notifiedSet = new Set();
-    saveCollected(); saveNotified(); await saveData(); updateUI(); updateImportPage();
+    customers = []; currentVersion = null; collectedSet = new Set(); notifiedSet = new Set(); notesMap = {};
+    saveCollected(); saveNotified(); saveNotes(); await saveData(); updateUI(); updateImportPage();
     showToast('Đã xóa dữ liệu');
 }
 
