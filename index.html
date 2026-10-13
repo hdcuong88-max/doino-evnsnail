@@ -346,6 +346,14 @@
                 </button>
             </div>
             <div class="import-section">
+                <div class="import-section-title">Xuất thay đổi</div>
+                <button class="import-btn" onclick="exportChanges()">
+                    <span style="font-size:22px;color:var(--primary)">📤</span>
+                    <span style="flex:1;font-size:16px">Xuất CSV (Đã thu, Đã TB, Ghi chú)<br><small id="changeCount" style="color:var(--text-tertiary)"></small></span>
+                    <span style="color:var(--separator)">›</span>
+                </button>
+            </div>
+            <div class="import-section">
                 <div class="import-section-title">Thông tin</div>
                 <ul class="import-note">
                     <li>Chọn file CSV danh sách nợ từ CMIS</li>
@@ -821,6 +829,7 @@ function showImport() { updateImportPage(); document.getElementById('importPage'
 function closeImport() { document.getElementById('importPage').classList.remove('active'); }
 
 function updateImportPage() {
+    updateChangeCount();
     const autoVersion = document.getElementById('autoVersion').checked;
     if (autoVersion) { const now = new Date(); document.getElementById('versionRow').style.display = 'none'; }
     else { document.getElementById('versionRow').style.display = 'flex'; }
@@ -914,6 +923,53 @@ function parseCSVLine(line) {
         else current += ch;
     }
     cols.push(current); return cols;
+}
+
+function getChangedCustomers() {
+    return customers.filter(c => collectedSet.has(c.maKhachHang) || notifiedSet.has(c.maKhachHang) || notesMap[c.maKhachHang]);
+}
+
+function csvCell(v) {
+    const t = (v === null || v === undefined) ? '' : String(v);
+    return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+
+function exportChanges() {
+    const list = getChangedCustomers();
+    if (!list.length) { showToast('Chưa có thay đổi nào để xuất'); return; }
+    const header = ['MA_KHTT','TEN_KHANG','SDT','DIA_CHI','TONG_NOP','THANGNAMKY','MA_SOGCS','DA_THU','DA_THONG_BAO','GHI_CHU'];
+    const lines = [header.join(',')];
+    for (const c of list) {
+        lines.push([
+            c.maKhachHang, c.tenKhachHang, c.soDienThoai, c.diaChi, c.tongTien,
+            c.kyNo, c.sgc || '',
+            collectedSet.has(c.maKhachHang) ? 1 : 0,
+            notifiedSet.has(c.maKhachHang) ? 1 : 0,
+            notesMap[c.maKhachHang] || ''
+        ].map(csvCell).join(','));
+    }
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const stamp = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}_${pad(now.getHours())}h${pad(now.getMinutes())}`;
+    const fileName = `thay-doi_${stamp}.csv`;
+    // BOM để Excel mở đúng tiếng Việt
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const file = new File([blob], fileName, { type: 'text/csv' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: fileName }).catch(() => {});
+        return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`Đã xuất ${list.length} KH`);
+}
+
+function updateChangeCount() {
+    const el = document.getElementById('changeCount');
+    if (el) el.textContent = `${getChangedCustomers().length} KH có thay đổi`;
 }
 
 async function clearData() {
